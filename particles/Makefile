@@ -142,7 +142,7 @@ export OFILES	:=	$(addsuffix .o, $(BINFILES))					\
 export INCLUDE	:=	$(foreach dir,$(INCDIRS),-I$(CURDIR)/$(dir))	\
 					$(foreach dir,$(LIBDIRS),-I$(dir)/include)		\
 					-I$(CURDIR)/$(BUILD)
- 
+
 export LIBPATHS	:=	-L$(CURDIR) $(foreach dir,$(LIBDIRS),-L$(dir)/lib)
 
 # --- More targets ----------------------------------------------------
