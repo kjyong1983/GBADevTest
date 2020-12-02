@@ -21,12 +21,6 @@
             "problemMatcher": []
         },
         {
-            "label": "clean & make",
-            "type": "shell",
-            "command": "make clean & make & start .",
-            "problemMatcher": []
-        },
-        {
             "label": "play",
             "type": "shell",
             "command": "echo Hello"
