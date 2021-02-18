@@ -124,7 +124,9 @@ void draw_enemy(){
 	obj_set_pos(enemySprite, enemyX, enemyY);
 }
 
-
+void init_animation_dummy(){
+	
+}
 
 void init_bullet_pool(){
 
@@ -168,6 +170,8 @@ int main()
 	init_enemy();
 
 	init_bullet_pool();
+
+	init_animation_dummy();
 
 	while(1)
 	{

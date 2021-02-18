@@ -20,5 +20,5 @@ extern void print_test(){
 	tte_init_con();
 	
 	// Printf something at 96,72
-	tte_printf("#{P:96,72}Hello World!");	
+	// tte_printf("#{P:96,72}Hello World!");
 }

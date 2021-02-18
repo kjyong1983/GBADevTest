@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <tonc.h>
 #include <string.h>
+#include <pthread.h>
+#include <stdlib.h>
 
 // sprite
 #include "pika.h"
@@ -12,6 +14,9 @@
 
 // bg
 #include "brin.h"
+
+// test
+#include "test.c"
 
 OBJ_ATTR obj_buffer[128];
 OBJ_AFFINE *obj_aff_buffer = (OBJ_AFFINE*)obj_buffer;
@@ -208,13 +213,54 @@ void game_test_init(){
 	}
 }
 
+typedef void (*pcb)(int a);
+typedef struct parameter{
+	int a;
+	pcb callback;
+} parameter;
+
+void* callback_thread(void* p1){
+	// do something
+	parameter* p = (parameter*) p1;
+	while (1)
+	{
+		tte_printf("#{P:96,72}Hello World!");
+		sleep(3);
+		p->callback(p->a);
+	}
+}
+
+extern void SetCallbackFun(int a, pcb callback)
+{
+    printf("SetCallbackFun print! \n");
+    parameter *p = malloc(sizeof(parameter)) ;
+    p->a  = 10;
+    p->callback = callback;
+
+    pthread_t thing1;
+    pthread_create(&thing1, NULL, callback_thread, (void *) p);
+    pthread_join(thing1, NULL);
+	// pthread_atfork(thing1, NULL, NULL);
+}
+
+void fCallback(int a){
+	// do something
+	tte_printf("#{P:96,72}a = %d", a);
+	tte_printf("#{P:96,72}fcallback print!");
+}
+
+void async_test(){
+	SetCallbackFun(4, fCallback);
+}
+
 int main()
 {
 	// Init interrupts and VBlank irq.
 	irq_init(NULL);
 	irq_add(II_VBLANK, NULL);
 	
-	// print_test();
+	print_test();
+	async_test();
 
 	// sprite_test_pika();
 	// sprite_test_food();
@@ -229,7 +275,8 @@ int main()
 	// 	VBlankIntrWait();
 	// }
 
-	game_test_init();
+	// game_test_init();
+
 
 	return 0;
 }
