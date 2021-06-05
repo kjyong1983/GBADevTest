@@ -4,8 +4,6 @@
 
 // bg
 #include "brin.h"
-// #include "splash_yyt.h"
-// #include "logotest.h"
 #include "yyt.h"
 #include "title.h"
 #include "gameover.h"
@@ -30,22 +28,47 @@ OBJ_AFFINE *obj_aff_buffer = (OBJ_AFFINE*)obj_buffer;
 //sprite
 int oamCount = 0;
 
+
+typedef struct Vector2
+{
+	int x;
+	int y;
+} Vector2;
+
 // player info
-OBJ_ATTR* playerSprite;
-int playerX = SCREEN_WIDTH / 2, playerY = SCREEN_HEIGHT / 2;
-int playerSizeX = 16, playerSizeY = 16;
-int playerSpeed = 2;
-u32 playerTileId = 0, playerPalBank = 0;
+typedef struct Player
+{
+	OBJ_ATTR* sprite;
+	Vector2 pos;
+	Vector2 size;
+	int speed;
+
+	u32 tileId;
+	u32 palBank;
+} Player;
+
+Player player;
 
 // bg info
-int bgX = 192, bgY = 64;
-int bgScrollSpeed = 1;
+typedef struct BG
+{
+	Vector2 pos;
+	int speed;
+} BG;
+
+BG bg;
 
 // enemy info
 // TODO: enemy pooling
-OBJ_ATTR* enemySprite;
-int enemyX = 10, enemyY = 10;
-u32 enemyTileId = 4, enemyPalBank = 0;
+typedef struct Enemy
+{
+	OBJ_ATTR* sprite;
+	Vector2 pos;
+	u32 tileId;
+	u32 palBank;
+} Enemy;
+
+Enemy enemy;
 
 GAME_SCENE prevScene = GAME_SCENE_LOGO;
 GAME_SCENE currentScene = GAME_SCENE_LOGO;
@@ -155,8 +178,12 @@ void init_bg()
 	REG_DISPCNT |= DCNT_BG0;
 	REG_BG0CNT |= BG_CBB(0) | BG_SBB(30) | BG_4BPP | BG_REG_64x32;
 
-	bgX = 192;
-	bgY = 64;
+	// 빈 구조체 생성이 안됨
+	// bg = {};
+	bg.pos.x = 192;
+	bg.pos.y = 64;
+
+	bg.speed = 1;
 
 	memcpy(pal_bg_mem, brinPal, brinPalLen);
 	memcpy(&tile_mem[0][0], brinTiles, brinTilesLen);
@@ -165,11 +192,11 @@ void init_bg()
 
 void update_bg()
 {
-	bgX += bgScrollSpeed * key_tri_horz();
-	bgY += bgScrollSpeed * key_tri_vert();
+	bg.pos.x += bg.speed * key_tri_horz();
+	bg.pos.y += bg.speed * key_tri_vert();
 
-	REG_BG0HOFS = bgX;
-	REG_BG0VOFS = bgY;
+	REG_BG0HOFS = bg.pos.x;
+	REG_BG0VOFS = bg.pos.y;
 }
 
 void draw_bg()
@@ -189,75 +216,86 @@ void init_sprite()
 // player sprite
 void init_player()
 {
-	playerX = SCREEN_WIDTH / 2;
-	playerY = SCREEN_HEIGHT / 2;
+	player.pos.x = SCREEN_WIDTH / 2;
+	player.pos.y = SCREEN_HEIGHT / 2;
+
+	player.size.x = 16;
+	player.size.y = 16;
+
+	player.speed = 2;
+	player.tileId = 0;
+	player.palBank = 0;
 
 	// oam index
-	playerSprite = &obj_buffer[0];
+	player.sprite = &obj_buffer[0];
 
-	obj_set_attr(playerSprite, ATTR0_SQUARE, ATTR1_SIZE_16, ATTR2_PALBANK(playerPalBank) | playerTileId);
-	obj_set_pos(playerSprite, playerX, playerY);
+	obj_set_attr(player.sprite, ATTR0_SQUARE, ATTR1_SIZE_16, ATTR2_PALBANK(player.palBank) | player.tileId);
+	obj_set_pos(player.sprite, player.pos.x, player.pos.y);
 
 	oamCount++;
 }
 
 void clamp_player_position()
 {
-	if (playerX > SCREEN_WIDTH - playerSizeX)
+	if (player.pos.x > SCREEN_WIDTH - player.size.x)
 	{
-		playerX = SCREEN_WIDTH - playerSizeX;
+		player.pos.x = SCREEN_WIDTH - player.size.x;
 	}
 
-	if (playerX < 0)
+	if (player.pos.x < 0)
 	{
-		playerX = 0;
+		player.pos.x = 0;
 	}
 
-	if (playerY > SCREEN_HEIGHT - playerSizeY)
+	if (player.pos.y > SCREEN_HEIGHT - player.size.y)
 	{
-		playerY = SCREEN_HEIGHT - playerSizeY;
+		player.pos.y = SCREEN_HEIGHT - player.size.y;
 	}
 
-	if (playerY < 0)
+	if (player.pos.y < 0)
 	{
-		playerY = 0;
+		player.pos.y = 0;
 	}
 }
 
 void update_player()
 {
-	playerX += playerSpeed * key_tri_horz();
-	playerY += playerSpeed * key_tri_vert();
+	player.pos.x += player.speed * key_tri_horz();
+	player.pos.y += player.speed * key_tri_vert();
 }
 
 void draw_player()
 {
-	obj_set_pos(playerSprite, playerX, playerY);
+	obj_set_pos(player.sprite, player.pos.x, player.pos.y);
 }
 
 // enemy
 void init_enemy()
 {
-	enemyX = 10;
-	enemyY = 10;
-	
-	// oam index
-	enemySprite = &obj_buffer[1];
+	enemy.pos.x = 10;
+	enemy.pos.y = 10;
 
-	obj_set_attr(enemySprite, ATTR0_SQUARE, ATTR1_SIZE_16, ATTR2_PALBANK(enemyPalBank) | enemyTileId);
-	obj_set_pos(enemySprite, enemyX, enemyY);
+	enemy.tileId = 4;
+	enemy.palBank = 0;
+
+	// oam index
+	enemy.sprite = &obj_buffer[1];
+
+	obj_set_attr(enemy.sprite, ATTR0_SQUARE, ATTR1_SIZE_16, ATTR2_PALBANK(enemy.palBank) | enemy.tileId);
+	obj_set_pos(enemy.sprite, enemy.pos.x, enemy.pos.y);
 	oamCount++;
 }
 
 void update_enemy()
 {
-	enemyX += enemyX > playerX ? -1 : 1;
-	enemyY += enemyY > playerY ? -1 : 1;
+	enemy.pos.x += enemy.pos.x > player.pos.x ? -1 : 1;
+	enemy.pos.y += enemy.pos.y > player.pos.y ? -1 : 1;
+
 }
 
 void draw_enemy()
 {
-	obj_set_pos(enemySprite, enemyX, enemyY);
+	obj_set_pos(enemy.sprite, enemy.pos.x, enemy.pos.y);
 }
 
 void init_animation_dummy()
@@ -411,10 +449,6 @@ void enter_logo()
 	REG_DISPCNT |= DCNT_BG0;
 	REG_BG0CNT |= BG_CBB(0) | BG_SBB(30) | BG_4BPP | BG_REG_64x32;
 
-	// memcpy(pal_bg_mem, brinPal, brinPalLen);
-	// memcpy(&tile_mem[0][0], brinTiles, brinTilesLen);
-	// memcpy(&se_mem[30][0], brinMap, brinMapLen);
-
 	memcpy(pal_bg_mem, yytPal, yytPalLen);
 	memcpy(&tile_mem[0][0], yytTiles, yytTilesLen);
 	memcpy(&se_mem[30][0], yytMap, yytMapLen);
@@ -508,11 +542,11 @@ void exit_game()
 	// 그려진것 어떻게 지우는지?
 	// 임시: 위치 날리기
 
-	playerX = hidePos;
-	playerY = hidePos;
+	player.pos.x = hidePos;
+	player.pos.y = hidePos;
 
-	enemyX = hidePos;
-	enemyY = hidePos;
+	enemy.pos.x = hidePos;
+	enemy.pos.y = hidePos;
 
 	update_player();
 	update_enemy();
@@ -523,8 +557,8 @@ void exit_game()
 	draw_sprite();
 
 	// 게임 씬 오브젝트 모두 정리
-	playerSprite = NULL;
-	enemySprite = NULL;
+	player.sprite = NULL;
+	enemy.sprite = NULL;
 
 	oamCount = 0;
 }
@@ -532,7 +566,6 @@ void exit_game()
 void enter_gameOver()
 {
 	// 게임 오버 맵 파일 생성
-	
 	memcpy(pal_bg_mem, gameoverPal, gameoverPalLen);
 	memcpy(&tile_mem[0][0], gameoverTiles, gameoverTilesLen);
 	memcpy(&se_mem[30][0], gameoverMap, gameoverMapLen);
