@@ -8,7 +8,7 @@
 #include "title.h"
 #include "gameover.h"
 
-// 맵으로 넣을 때는 512*256, 4bpp, sbb 포맷으로
+// 맵으로 넣을 때는 sbb 포맷으로
 
 // sprite
 #include "mygame.h"
@@ -28,26 +28,25 @@ OBJ_AFFINE *obj_aff_buffer = (OBJ_AFFINE*)obj_buffer;
 //sprite
 int oamCount = 0;
 
-
 typedef struct Vector2
 {
 	int x;
 	int y;
 } Vector2;
 
-// player info
-typedef struct Player
+typedef struct Entity
 {
-	OBJ_ATTR* sprite;
 	Vector2 pos;
 	Vector2 size;
 	int speed;
 
+	OBJ_ATTR* sprite;
 	u32 tileId;
 	u32 palBank;
-} Player;
+} Entity;
 
-Player player;
+// player info
+Entity player;
 
 // bg info
 typedef struct BG
@@ -60,15 +59,7 @@ BG bg;
 
 // enemy info
 // TODO: enemy pooling
-typedef struct Enemy
-{
-	OBJ_ATTR* sprite;
-	Vector2 pos;
-	u32 tileId;
-	u32 palBank;
-} Enemy;
-
-Enemy enemy;
+Entity enemy;
 
 GAME_SCENE prevScene = GAME_SCENE_LOGO;
 GAME_SCENE currentScene = GAME_SCENE_LOGO;
@@ -172,6 +163,9 @@ float gameTimer = 0;
 // 	}
 // }
 
+// physics?
+bool CheckCollision(Entity a, Entity b);
+
 // bg
 void init_bg()
 {
@@ -258,8 +252,13 @@ void init_enemy()
 	enemy.pos.x = 10;
 	enemy.pos.y = 10;
 
+	enemy.size.x = 16;
+	enemy.size.y = 16;
+
 	enemy.tileId = 4;
 	enemy.palBank = 0;
+
+	enemy.speed = 1;
 
 	// oam index
 	enemy.sprite = &obj_buffer[1];
@@ -271,8 +270,9 @@ void init_enemy()
 
 void update_enemy()
 {
-	enemy.pos.x += enemy.pos.x > player.pos.x ? -1 : 1;
-	enemy.pos.y += enemy.pos.y > player.pos.y ? -1 : 1;
+	int speed = enemy.speed;
+	enemy.pos.x += enemy.pos.x > player.pos.x ? -speed : speed;
+	enemy.pos.y += enemy.pos.y > player.pos.y ? -speed : speed;
 	obj_set_pos(enemy.sprite, enemy.pos.x, enemy.pos.y);
 }
 
@@ -496,9 +496,9 @@ void update_game()
 	
 	update_enemy();
 
-	// check_collision();
-
-	if(key_hit(KEY_A))
+	// if(key_hit(KEY_A))
+	// TODO: 적이 여러명일 때 처리
+	if(CheckCollision(player, enemy))
 		ChangeScene(GAME_SCENE_GAMEOVER);
 
 	draw_sprite();
@@ -558,4 +558,15 @@ void exit_gameOver()
 	// 게임 오버 씬 오브젝트 정리
 }
 
+bool CheckCollision(Entity a, Entity b)
+{
+	if (a.pos.x < b.pos.x + b.size.x &&
+		a.pos.x + a.size.x > b.pos.x &&
+		a.pos.y < b.pos.y + b.size.y &&
+		a.pos.y + a.size.y > b.pos.y)
+	{
+		return true;
+	}
 
+	return false;	
+}
