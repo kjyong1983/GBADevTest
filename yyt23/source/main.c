@@ -73,6 +73,9 @@ void enter_gameOver();
 void update_gameOver();
 void exit_gameOver();
 
+// score
+int score = 0;
+
 // timer
 // int gameTimer = 0;
 float gameTimer = 0;
@@ -152,6 +155,9 @@ void init_bg()
 	REG_DISPCNT |= DCNT_BG0;
 	REG_BG0CNT |= BG_CBB(0) | BG_SBB(30) | BG_4BPP | BG_REG_64x32;
 
+	bgX = 192;
+	bgY = 64;
+
 	memcpy(pal_bg_mem, brinPal, brinPalLen);
 	memcpy(&tile_mem[0][0], brinTiles, brinTilesLen);
 	memcpy(&se_mem[30][0], brinMap, brinMapLen);
@@ -183,6 +189,9 @@ void init_sprite()
 // player sprite
 void init_player()
 {
+	playerX = SCREEN_WIDTH / 2;
+	playerY = SCREEN_HEIGHT / 2;
+
 	// oam index
 	playerSprite = &obj_buffer[0];
 
@@ -219,8 +228,6 @@ void update_player()
 {
 	playerX += playerSpeed * key_tri_horz();
 	playerY += playerSpeed * key_tri_vert();
-
-	clamp_player_position();
 }
 
 void draw_player()
@@ -231,6 +238,9 @@ void draw_player()
 // enemy
 void init_enemy()
 {
+	enemyX = 10;
+	enemyY = 10;
+	
 	// oam index
 	enemySprite = &obj_buffer[1];
 
@@ -263,64 +273,6 @@ void init_bullet_pool()
 void draw_sprite(){
 	oam_copy(oam_mem, obj_buffer, oamCount);	// only need to update one
 }
-
-// int main()
-// {
-// 	// Init interrupts and VBlank irq.
-// 	irq_init(NULL);
-// 	irq_add(II_VBLANK, NULL);
-	
-// 	REG_DISPCNT = DCNT_MODE0;
-
-// 	// // Init 4bpp vwf text on bg 0.
-// 	// tte_init_chr4c(0, 			// BG 0
-// 	// 	BG_CBB(0)|BG_SBB(31),	// Charblock 0; screenblock 31
-// 	// 	0xF000,					// Screen-entry offset
-// 	// 	bytes2word(1,2,0,0),	// Color attributes.
-// 	// 	CLR_YELLOW, 			// Yellow text
-// 	// 	&verdana9Font,			// Verdana 9 font
-// 	// 	NULL					// Use default chr4 renderer
-// 	// 	);
-	
-// 	// // Initialize use of stdio.
-// 	// tte_init_con();
-	
-// 	// // Printf something at 96,72
-// 	// tte_printf("#{P:96,72}Hello World!");
-
-
-
-// 	init_bg();
-	
-// 	init_sprite();
-	
-// 	init_player();
-// 	init_enemy();
-
-// 	init_bullet_pool();
-
-// 	init_animation_dummy();
-
-// 	while(1)
-// 	{
-// 		VBlankIntrWait();
-
-// 		key_poll();
-
-// 		update_bg();
-// 		update_player();
-// 		update_enemy();
-
-// 		draw_bg();
-
-// 		draw_player();
-// 		draw_enemy();
-
-// 		draw_sprite();
-// 	}
-
-// 	return 0;
-// }
 
 int main()
 {
@@ -519,15 +471,19 @@ void enter_game()
 	init_bullet_pool();
 
 	init_animation_dummy();
+
+	score = 0;
 }
 
 void update_game()
 {
 	update_bg();
 	update_player();
+	clamp_player_position();
+	
 	update_enemy();
 
-	draw_bg();
+	// draw_bg();
 	draw_player();
 	draw_enemy();
 
@@ -537,11 +493,40 @@ void update_game()
 		ChangeScene(GAME_SCENE_GAMEOVER);
 
 	draw_sprite();
+
+	score++;
 }
+
+int hidePos = 250;
 
 void exit_game()
 {
+	// 배경 정리
+	REG_BG0HOFS = 0;
+	REG_BG0VOFS = 0;
+
+	// 그려진것 어떻게 지우는지?
+	// 임시: 위치 날리기
+
+	playerX = hidePos;
+	playerY = hidePos;
+
+	enemyX = hidePos;
+	enemyY = hidePos;
+
+	update_player();
+	update_enemy();
+	
+	draw_player();
+	draw_enemy();
+
+	draw_sprite();
+
 	// 게임 씬 오브젝트 모두 정리
+	playerSprite = NULL;
+	enemySprite = NULL;
+
+	oamCount = 0;
 }
 
 void enter_gameOver()
@@ -558,8 +543,8 @@ void update_gameOver()
 {
 	// show game over screen
 	// 1초간 입력 무시, 그 이후 a키 누르면 타이틀로 이동
-
-	ChangeScene(GAME_SCENE_TITLE);
+	if(key_hit(KEY_A))
+		ChangeScene(GAME_SCENE_TITLE);
 }
 
 
