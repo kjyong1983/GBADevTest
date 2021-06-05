@@ -199,11 +199,6 @@ void update_bg()
 	REG_BG0VOFS = bg.pos.y;
 }
 
-void draw_bg()
-{
-
-}
-
 void init_sprite()
 {
 	REG_DISPCNT |= DCNT_OBJ | DCNT_OBJ_1D;
@@ -238,34 +233,22 @@ void init_player()
 void clamp_player_position()
 {
 	if (player.pos.x > SCREEN_WIDTH - player.size.x)
-	{
 		player.pos.x = SCREEN_WIDTH - player.size.x;
-	}
 
 	if (player.pos.x < 0)
-	{
 		player.pos.x = 0;
-	}
 
 	if (player.pos.y > SCREEN_HEIGHT - player.size.y)
-	{
 		player.pos.y = SCREEN_HEIGHT - player.size.y;
-	}
 
 	if (player.pos.y < 0)
-	{
 		player.pos.y = 0;
-	}
 }
 
 void update_player()
 {
 	player.pos.x += player.speed * key_tri_horz();
 	player.pos.y += player.speed * key_tri_vert();
-}
-
-void draw_player()
-{
 	obj_set_pos(player.sprite, player.pos.x, player.pos.y);
 }
 
@@ -290,11 +273,6 @@ void update_enemy()
 {
 	enemy.pos.x += enemy.pos.x > player.pos.x ? -1 : 1;
 	enemy.pos.y += enemy.pos.y > player.pos.y ? -1 : 1;
-
-}
-
-void draw_enemy()
-{
 	obj_set_pos(enemy.sprite, enemy.pos.x, enemy.pos.y);
 }
 
@@ -512,14 +490,11 @@ void enter_game()
 void update_game()
 {
 	update_bg();
+	
 	update_player();
 	clamp_player_position();
 	
 	update_enemy();
-
-	// draw_bg();
-	draw_player();
-	draw_enemy();
 
 	// check_collision();
 
@@ -551,9 +526,6 @@ void exit_game()
 	update_player();
 	update_enemy();
 	
-	draw_player();
-	draw_enemy();
-
 	draw_sprite();
 
 	// 게임 씬 오브젝트 모두 정리
